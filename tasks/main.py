@@ -1213,14 +1213,16 @@ class SummaryConstrainedMolOpt(MainTask, AutoNamingTask):
     Summarize the results of the constrained molecular optimization task.
     The data provided from the previous task use the raw 
     '''
+    
     DataPreprocessing_params = luigi.DictParameter(default=DataPreprocessing_params)
     TrainWithPred_params = luigi.DictParameter(default=TrainWithPred_params)
     ComputeTargetValues_params = luigi.DictParameter(default=ComputeTargetValues_params)
     ConstrainedMolOpt_params = luigi.DictParameter(default=ConstrainedMolOpt_params)
     use_gpu = luigi.BoolParameter()
     working_subdir = luigi.Parameter(default="summary_constrained_molopt_with_pred")
-
+    
     def requires(self):
+        print(f'ConstrainedMolOpt_params: {self.ConstrainedMolOpt_params}')
         return ConstrainedMolOpt(DataPreprocessing_params=self.DataPreprocessing_params,
                                  TrainWithPred_params=self.TrainWithPred_params,
                                  ComputeTargetValues_params=self.ComputeTargetValues_params,
@@ -1241,6 +1243,8 @@ class SummaryConstrainedMolOpt(MainTask, AutoNamingTask):
 
         for each_similarity in similarity_list:
             summary_df = pd.DataFrame(columns=res.columns)
+
+
             for each_org_smiles in org_smiles_list:
                 batch_res = res.loc[res['org_smiles'] == each_org_smiles]
                 batch_res = batch_res[batch_res['similarity'] != 1]
@@ -1248,7 +1252,28 @@ class SummaryConstrainedMolOpt(MainTask, AutoNamingTask):
                 if len(similar_res) == 0:
                     continue
                 else:
-                    best_idx = similar_res['pred_mod_tgt'].argmin()
+                    # best_idx = similar_res['pred_mod_tgt'].argmin()
+                    """
+                    The current behaviour of 'Series.argmin' is deprecated, use 'idxmin'
+                    instead.
+                    The behavior of 'argmin' will be corrected to return the positional
+                    minimum in the future. For now, use 'series.values.argmin' or
+                    'np.argmin(np.array(values))' to get the position of the minimum
+                    row."""
+                    # best_idx = similar_res['pred_mod_tgt'].idxmin()
+                    """added for debuggin"""
+                    # print(f'Shape of summary df: {summary_df.shape}')
+                    # print(f"Shape of similar_res: {similar_res.shape}")
+                    # print(f"Columns: {similar_res.columns}")
+                    # print(f"Index: {similar_res.index}")
+                    similar_res.reset_index(drop=True, inplace=True)
+                    # print(f"Index: {similar_res.index}")
+                    # print(f"idxmin: {similar_res['pred_mod_tgt'].idxmin()}")
+                    # print(f"values argmin: {similar_res['pred_mod_tgt'].values.argmin()}")
+                    # print(f"np.argmin: {np.argmin(np.array(similar_res['pred_mod_tgt']))}")
+
+                    best_idx = np.argmin(np.array(similar_res['pred_mod_tgt']))
+
                     summary_df = summary_df.append(similar_res.loc[best_idx])
             res_dict[each_similarity] = deepcopy(summary_df)
             logger.info('============================================================')

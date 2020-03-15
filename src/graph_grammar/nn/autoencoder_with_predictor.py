@@ -537,7 +537,10 @@ class GrammarSeq2SeqVAEWithPred(Seq2SeqVAEWithPred):
                     torch.zeros(self.batch_size, self.latent_dim),
                     torch.ones(self.batch_size * self.latent_dim)))
         else:
-            z = z.cuda()
+            if self.use_gpu:
+		z = z.cuda()
+            else:
+		pass
 
         hidden_dict_0 = {}
         for each_hidden in self.latent2hidden_dict.keys():
